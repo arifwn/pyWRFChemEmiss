@@ -2,7 +2,7 @@
 '''
 Created on Mar 21, 2011
 
-@author: Arif Widi Nugroho < arif@hexarius.com >
+@author: Arif Widi Nugroho <arif@sainsmograf.com>
 '''
 
 import wx
