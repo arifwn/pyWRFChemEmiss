@@ -311,11 +311,11 @@ class MainPanel(wx.Panel):
         info = wx.AboutDialogInfo()
         info.Name = "WRF Emission Converter"
         info.Version = "0.0.1"
-        info.Copyright = "(C) 2011 Arif Widi Nugroho < arif@hexarius.com >"
+        info.Copyright = "(C) 2011 Arif Widi Nugroho < arif@sainsmograf.com >"
         info.Description = wordwrap(
             """ Memproses data emisi dari file Excel 2007 ke dalam format WRF/Chem """,
             350, wx.ClientDC(self))
-        info.Developers = [ "Arif Widi Nugroho < arif@hexarius.com >"]
+        info.Developers = [ "Arif Widi Nugroho < arif@sainsmograf.com >"]
         licenseText = "Use it anyway you like!"
         info.License = wordwrap(licenseText, 350, wx.ClientDC(self))
 
