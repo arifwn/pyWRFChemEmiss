@@ -2,13 +2,18 @@
 """
 Modul konversi utama
 """
+
+import os
+import cPickle
+
+import numpy
+
+import fortranfile
 import data_downscaler
 import namelist_reader
 import domain_data
 import pupynere
 import commons
-import os
-import cPickle
 from openpyxl.reader.excel import load_workbook
 
 def opj(path):
@@ -35,12 +40,12 @@ class PayloadThreadProc(commons.BaseThreadProc):
         self.data_list       = [] #per pollutant
         self.conv_factor     = []
         self.source_list     = []
-        self.pollutant_list  = ['E_ALD', 'E_CO', 'E_CSL', 'E_ECI', 'E_ECJ', 
-                               'E_ETH', 'E_HC3', 'E_HC5', 'E_HC8', 'E_HCHO', 
-                               'E_ISO', 'E_KET', 'E_NH3', 'E_NO', 'E_NO3I', 
-                               'E_NO3J', 'E_OL2', 'E_OLI', 'E_OLT', 'E_ORA2', 
-                               'E_ORGI', 'E_ORGJ', 'E_PM25I', 'E_PM25J', 'E_PM_10', 
-                               'E_SO2', 'E_SO4I', 'E_SO4J', 'E_TOL', 'E_XYL']
+        self.pollutant_list  = ['e_so2 ','e_no  ','e_ald ','e_hcho','e_ora2',
+                'e_nh3 ','e_hc3 ','e_hc5 ','e_hc8 ', 
+                'e_eth ','e_co  ','e_ol2 ','e_olt ','e_oli ','e_tol ','e_xyl ',
+                'e_ket ','e_csl ','e_iso ','e_pm25i','e_pm25j', 
+                'e_so4i','e_so4j','e_no3i','e_no3j','e_orgi','e_orgj','e_eci', 
+                'e_ecj','e_pm10']
         self.additional_pollutan_list = [] #custom polutant id di sini
         self.pollutant_str = []
     
@@ -201,15 +206,9 @@ class PayloadThreadProc(commons.BaseThreadProc):
         print "debug: Emission interpolation end"
         print "------------------------------"
     
-    def save_emission(self):
+    def save_emission_old(self):
         print "debug: Emission save start"
         self.progress("Saving Result")
-        #TODO: debug
-#        print "debug: Reading cache"
-#        print os.getcwd()
-#        cache_file = open("cache_payload", 'r')
-#        self.domain_emiss = cPickle.load(cache_file)
-#        cache_file.close()
         
         for n in range(self.maxdom):
             domain = self.domains[n]
@@ -267,6 +266,77 @@ class PayloadThreadProc(commons.BaseThreadProc):
                                 cdf_vars[plt][i][j][y][x] = self.domain_emiss[n][y][x][p] 
     
             cdf_file.close()
+            
+        print "debug: Emission save end"
+        print "------------------------------"
+        
+    def save_emission(self):
+        print "debug: Emission save start"
+        self.progress("Saving Result")
+        
+        emission_name = ['e_so2 ','e_no  ','e_ald ','e_hcho','e_ora2',
+                'e_nh3 ','e_hc3 ','e_hc5 ','e_hc8 ', 
+                'e_eth ','e_co  ','e_ol2 ','e_olt ','e_oli ','e_tol ','e_xyl ',
+                'e_ket ','e_csl ','e_iso ','e_pm25i','e_pm25j', 
+                'e_so4i','e_so4j','e_no3i','e_no3j','e_orgi','e_orgj','e_eci', 
+                'e_ecj','e_pm10']
+        
+        n_emiss = len(emission_name)
+        emission_name_str = ''
+        for em in emission_name:
+            emission_name_str += '%-9s' % em
+        
+        for n in range(self.maxdom):
+            domain = self.domains[n]
+            filename_1 = opj("{0}/wrfem_00to12z_d{1:0>2}".format(self.save_dir, n+1))
+            filename_2 = opj("{0}/wrfem_12to24z_d{1:0>2}".format(self.save_dir, n+1))
+            
+            width = domain.w # e_we - 1 -> IX2
+            height = domain.h # e_sn - 1 -> JX3
+            n_layer = 1 # 0 < kemit < e_vert -> KX or z-level
+            
+            # file 1
+            f = fortranfile.FortranFile(filename_1, endian='>', mode='w')
+            f.writeInts([n_emiss])
+            f.writeString(emission_name_str)
+            
+            for hour in range(1,13):
+                f.writeInts([hour])
+                for emission_num in range(1, n_emiss+1):
+                    for p, plt in enumerate(self.pollutant_str):
+                        print 'saving frame [1]', hour, emission_num, plt
+                        b = numpy.ndarray([], numpy.float32)
+                        b.resize((width * n_layer * height,))
+                        if plt == self.pollutant_list[emission_num - 1]:
+                            print 'saving ', plt
+                            for z in range(n_layer):
+                                for y in range(height):
+                                    for x in range(width):
+                                        b[x + (n_layer * width * y) + (width * z)] = self.domain_emiss[n][y][x][p] 
+                        f.writeReals(b)
+            f.close()
+            
+            
+            # file 2
+            f = fortranfile.FortranFile(filename_2, endian='>', mode='w')
+            f.writeInts([n_emiss])
+            f.writeString(emission_name_str)
+            
+            for hour in range(13, 25):
+                f.writeInts([hour])
+                for emission_num in range(1, n_emiss+1):
+                    for p, plt in enumerate(self.pollutant_str):
+                        print 'saving frame [1]', hour, emission_num, plt
+                        b = numpy.ndarray([], numpy.float32)
+                        b.resize((width * n_layer * height,))
+                        if plt == self.pollutant_list[emission_num - 1]:
+                            print 'saving ', plt
+                            for z in range(n_layer):
+                                for y in range(height):
+                                    for x in range(width):
+                                        b[x + (n_layer * width * y) + (width * z)] = self.domain_emiss[n][y][x][p] 
+                        f.writeReals(b)
+            f.close()
             
         print "debug: Emission save end"
         print "------------------------------"
