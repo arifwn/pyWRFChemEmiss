@@ -307,7 +307,8 @@ class PayloadThreadProc(commons.BaseThreadProc):
                         print 'saving frame [1]', hour, emission_num, plt
                         b = numpy.ndarray([], numpy.float32)
                         b.resize((width * n_layer * height,))
-                        if plt == self.pollutant_list[emission_num - 1]:
+                        current_pollutant = self.pollutant_list[emission_num - 1]
+                        if plt.lower() == current_pollutant.strip():
                             print 'saving ', plt
                             for z in range(n_layer):
                                 for y in range(height):
@@ -326,10 +327,11 @@ class PayloadThreadProc(commons.BaseThreadProc):
                 f.writeInts([hour])
                 for emission_num in range(1, n_emiss+1):
                     for p, plt in enumerate(self.pollutant_str):
-                        print 'saving frame [1]', hour, emission_num, plt
+                        print 'saving frame [2]', hour, emission_num, plt
                         b = numpy.ndarray([], numpy.float32)
                         b.resize((width * n_layer * height,))
-                        if plt == self.pollutant_list[emission_num - 1]:
+                        current_pollutant = self.pollutant_list[emission_num - 1]
+                        if plt.lower() == current_pollutant.strip():
                             print 'saving ', plt
                             for z in range(n_layer):
                                 for y in range(height):
